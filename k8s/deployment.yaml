@@ -1,0 +1,29 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: clusterbloom
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: clusterbloom
+  template:
+    metadata:
+      labels:
+        app: clusterbloom
+    spec:
+      serviceAccountName: clusterbloom-reader
+      containers:
+        - name: clusterbloom
+          image: ghcr.io/shri-hari27/clusterbloom:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 3000
+          resources:
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "200m"
+              memory: "128Mi"
