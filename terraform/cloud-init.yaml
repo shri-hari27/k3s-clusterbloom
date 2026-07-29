@@ -1,0 +1,7 @@
+#cloud-config
+runcmd:
+  - curl -sfL https://get.k3s.io | sh -
+  - sleep 20
+  - mkdir -p /home/spidey/.kube
+  - k3s kubectl config view --raw > /home/spidey/.kube/config
+  - chown spidey:spidey /home/spidey/.kube/config

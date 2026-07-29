@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ClusterBloom</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+
+  <div id="wrap">
+    <canvas id="garden"></canvas>
+
+    <div id="hud">
+      <div class="hud-top">
+        <h1>Cluster<span>Bloom</span></h1>
+        <p class="subtitle">A living view of your Kubernetes cluster</p>
+      </div>
+      <div class="hud-stats">
+        <div class="stat-pill">
+          <span class="stat-label">PODS</span>
+          <span id="pod-count" class="stat-value">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">HEALTHY</span>
+          <span id="healthy-count" class="stat-value healthy">0</span>
+        </div>
+        <div class="stat-pill">
+          <span class="stat-label">ATTENTION</span>
+          <span id="attention-count" class="stat-value attention">0</span>
+        </div>
+      </div>
+      <div id="legend" class="legend">
+        <div><span class="dot running"></span> Running</div>
+        <div><span class="dot pending"></span> Pending</div>
+        <div><span class="dot failing"></span> Failing / not ready</div>
+      </div>
+    </div>
+
+    <div id="tooltip" class="hidden"></div>
+    <div id="connection-status" class="hidden"></div>
+  </div>
+
+<script src="script.js"></script>
+</body>
+</html>
