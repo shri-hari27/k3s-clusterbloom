@@ -5,7 +5,13 @@ A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every pod
 **Live demo:** the cluster is torn down between sessions to control cost (see *Cost management* below) — spin it up with the one-command Terraform flow to see it live.
 
 ---
+## Screenshots
 
+![ClusterBloom with 5 healthy pods](docs/screenshots/garden-overview.png)
+*Each glowing bloom is a live pod — scaling the deployment up/down blooms new ones in or wilts them away in real time.*
+
+![ClusterBloom showing failing pods](docs/screenshots/garden-with-failures.png)
+*Two deliberately broken pods rendering as coral-red blooms, pulsing faster to signal they need attention — driven entirely by real pod status from the Kubernetes API.*
 ## What this project demonstrates
 
 - **Infrastructure as Code** — the VM, virtual network, subnet, NSG, and public IP are all provisioned by Terraform, not clicked together manually.
