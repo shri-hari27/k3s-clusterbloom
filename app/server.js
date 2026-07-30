@@ -23,6 +23,37 @@ function readServiceAccountFiles() {
   }
 }
 
+function requestPodsFromApi(sa) {
+  return new Promise((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: 'kubernetes.default.svc',
+        path: `/api/v1/namespaces/${sa.namespace}/pods`,
+        method: 'GET',
+        ca: sa.ca,
+        headers: { Authorization: `Bearer ${sa.token}` }
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => { body += chunk; });
+        res.on('end', () => {
+          if (res.statusCode < 200 || res.statusCode >= 300) {
+            reject(new Error(`Kubernetes API returned ${res.statusCode}: ${body}`));
+            return;
+          }
+          try {
+            resolve(JSON.parse(body));
+          } catch (e) {
+            reject(new Error(`Failed to parse Kubernetes API response: ${e.message}`));
+          }
+        });
+      }
+    );
+    req.on('error', reject);
+    req.end();
+  });
+}
+
 async function fetchPods() {
   const sa = readServiceAccountFiles();
 
@@ -31,20 +62,10 @@ async function fetchPods() {
     return mockPods();
   }
 
-  const url = `https://kubernetes.default.svc/api/v1/namespaces/${sa.namespace}/pods`;
-
-  const agent = new https.Agent({ ca: sa.ca });
-
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${sa.token}` },
-    agent
-  });
-
-  if (!res.ok) {
-    throw new Error(`Kubernetes API returned ${res.status}`);
-  }
-
-  const data = await res.json();
+  // Node 18's built-in fetch (undici) does not reliably support the `agent`
+  // option for custom CA certs, which silently broke the in-cluster API call.
+  // Using the native https module directly avoids that incompatibility.
+  const data = await requestPodsFromApi(sa);
 
   return data.items.map(pod => ({
     name: pod.metadata.name,
