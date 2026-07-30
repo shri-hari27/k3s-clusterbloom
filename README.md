@@ -7,10 +7,10 @@ A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every pod
 ---
 ## Screenshots
 
-![ClusterBloom showing failing pods](<download (2).png>)
+![ClusterBloom showing failing pods](<5-healthy-pods.png>)
 *Each glowing bloom is a live pod — scaling the deployment up/down blooms new ones in or wilts them away in real time.*
 
-![ClusterBloom with 5 healthy pods](<WhatsApp Image 2026-07-31 at 01.03.36.jpeg>)
+![ClusterBloom with 5 healthy pods](<2-unhealthy-pods.jpeg>)
 *Two deliberately broken pods rendering as coral-red blooms, pulsing faster to signal they need attention — driven entirely by real pod status from the Kubernetes API.*
 
 
