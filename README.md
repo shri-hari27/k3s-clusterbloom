@@ -7,8 +7,6 @@ A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every pod
 ---
 ## Screenshots
 
-## Screenshots
-
 ![ClusterBloom showing failing pods](<download (2).png>)
 *Each glowing bloom is a live pod — scaling the deployment up/down blooms new ones in or wilts them away in real time.*
 
