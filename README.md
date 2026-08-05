@@ -1,19 +1,54 @@
 # ClusterBloom — A Living Visualization of a Kubernetes Cluster
 
-A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every pod is rendered as a glowing organism that blooms in when it starts, pulses based on real readiness/restart data pulled live from the Kubernetes API, and wilts away when it's terminated. Provisioned end-to-end with **Terraform**, running on **k3s** (lightweight Kubernetes) on an **Azure VM**, containerized with **Docker**, and continuously deployed via **GitHub Actions**.
+![Terraform](https://img.shields.io/badge/Terraform-844FBA?style=for-the-badge&logo=terraform&logoColor=white)
+![Azure](https://img.shields.io/badge/Azure-0078D4?style=for-the-badge&logo=microsoftazure&logoColor=white)
+![k3s](https://img.shields.io/badge/k3s-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![GitHub Actions](https://img.shields.io/badge/GitHub_Actions-2088FF?style=for-the-badge&logo=githubactions&logoColor=white)
+![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 
-**Live demo:** the cluster is torn down between sessions to control cost (see *Cost management* below) — spin it up with the one-command Terraform flow to see it live.
+A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every
+pod is rendered as a glowing organism that blooms in when it starts, pulses
+based on real readiness/restart data pulled live from the Kubernetes API,
+and wilts away when it's terminated. Provisioned end-to-end with
+**Terraform**, running on **k3s** (lightweight Kubernetes) on an **Azure
+VM**, containerized with **Docker**, and continuously deployed via
+**GitHub Actions**.
 
----
+**Live demo:** the cluster is torn down between sessions to control cost
+(see [Cost management](#cost-management)) — spin it up with the
+one-command Terraform flow to see it live.
+
+## Contents
+- [Screenshots](#screenshots)
+- [What this project demonstrates](#what-this-project-demonstrates)
+- [Architecture](#architecture)
+- [Tech stack](#tech-stack)
+- [Running this yourself](#running-this-yourself)
+- [Notable troubleshooting](#notable-troubleshooting-the-real-engineering-part)
+- [A known trade-off](#a-known-trade-off-ephemeral-infrastructure-vs-the-cicd-pipeline)
+- [Cost management](#cost-management)
+
 ## Screenshots
 
-![ClusterBloom showing failing pods](<2-unhealthy-pods.png>)
-*Each glowing bloom is a live pod — scaling the deployment up/down blooms new ones in or wilts them away in real time.*
+<table>
+<tr>
+<td width="50%">
 
-![ClusterBloom with 5 healthy pods](<5-healthy-pods.jpeg>)
-*Two deliberately broken pods rendering as coral-red blooms, pulsing faster to signal they need attention — driven entirely by real pod status from the Kubernetes API.*
+**Unhealthy pods**
+![ClusterBloom showing failing pods](2-unhealthy-pods.png)
+Two deliberately broken pods render as coral-red blooms, pulsing faster to signal they need attention — driven entirely by real pod status from the Kubernetes API.
 
+</td>
+<td width="50%">
 
+**Healthy cluster**
+![ClusterBloom with 5 healthy pods](5-healthy-pods.jpeg)
+Each glowing bloom is a live pod — scaling the deployment up or down blooms new ones in or wilts them away in real time.
+
+</td>
+</tr>
+</table>
 
 ## What this project demonstrates
 
@@ -24,23 +59,34 @@ A bioluminescent, real-time visualization of a k3s Kubernetes cluster: every pod
 
 ## Architecture
 
-```
-Developer push (app/ or k8s/)
-      │
-      ▼
-GitHub Actions
-  ├─ build & push image → GHCR (ghcr.io/shri-hari27/clusterbloom)
-  └─ SSH into k3s node → kubectl rollout restart
-      │
-      ▼
-k3s cluster (single-node, on an Azure VM provisioned by Terraform)
-  ├─ ServiceAccount + Role + RoleBinding (read-only pod access)
-  ├─ Deployment (ClusterBloom app, 1+ replicas)
-  ├─ Service (ClusterIP)
-  └─ Ingress (Traefik, routes port 80 → app)
-      │
-      ▼
-Browser: live-rendered pods, polled from the real Kubernetes API every few seconds
+```mermaid
+flowchart TB
+    A["Developer"] -->|"git push"| B["GitHub Actions"]
+    B -->|"build & push image"| C[("GHCR<br/>ghcr.io/shri-hari27/clusterbloom")]
+    B -->|"SSH + kubectl rollout restart"| K
+
+    subgraph K3S["k3s cluster — Azure VM, Terraform-provisioned"]
+        RBAC["ServiceAccount + Role<br/>read-only pod access"] -.->|"reads pod status"| K["Deployment"]
+        K --> S["Service"]
+        S --> ING["Ingress (Traefik)"]
+    end
+
+    C -.->|"image pull"| K
+    ING --> BR["Browser<br/>live pod visualization"]
+
+    classDef dev fill:#57606a,stroke:#8b949e,color:#fff
+    classDef ci fill:#238636,stroke:#2ea043,color:#fff
+    classDef registry fill:#00add8,stroke:#00b4d8,color:#000
+    classDef k8s fill:#326ce5,stroke:#58a6ff,color:#fff
+    classDef sec fill:#da3633,stroke:#f85149,color:#fff
+    classDef out fill:#8957e5,stroke:#a371f7,color:#fff
+
+    class A dev
+    class B ci
+    class C registry
+    class K,S,ING k8s
+    class RBAC sec
+    class BR out
 ```
 
 ## Tech stack
@@ -70,7 +116,7 @@ cd ../app
 docker build -t ghcr.io/<your-username>/clusterbloom:latest .
 docker login ghcr.io -u <your-username>
 docker push ghcr.io/<your-username>/clusterbloom:latest
-# make the package public via GitHub → Packages → clusterbloom → Package settings
+# make the package public via GitHub -> Packages -> clusterbloom -> Package settings
 
 # 3. Deploy manifests onto the cluster
 scp -i ~/.ssh/azure_rsa ../k8s/*.yaml <user>@<vm_ip>:~/
@@ -83,14 +129,15 @@ sudo k3s kubectl apply -f ingress.yaml
 # 4. Set up CI/CD
 #    - Add a PAT with write:packages scope as GitHub secret GHCR_PAT
 #    - Add SSH_PRIVATE_KEY, VM_HOST, VM_USER as GitHub secrets
-#    - Push a change to app/ or k8s/ — the pipeline builds, pushes, and redeploys automatically
+#    - Push a change to app/ or k8s/ -- the pipeline builds, pushes, and redeploys automatically
 ```
 
 Then visit `http://<vm_public_ip>`.
 
 ## Notable troubleshooting (the real engineering part)
 
-This project surfaced a genuinely wide range of real infrastructure issues, kept here deliberately:
+This project surfaced a genuinely wide range of real infrastructure issues,
+kept here deliberately:
 
 - **RBAC data-plane vs. control-plane confusion** (carried over learning from the previous project) — owning/managing a resource doesn't grant data-level access to what's inside it.
 - **ARM propagation races.** Subnet, vnet, and NSG creation sometimes succeeded on Azure's side but a subsequent Terraform read-back returned a stale `404`, because Azure's control plane hadn't fully propagated yet. Fixed with explicit `time_sleep` resources between dependent network resources, forcing real waits instead of relying on Terraform's default (too-fast) dependency resolution.
@@ -102,12 +149,16 @@ This project surfaced a genuinely wide range of real infrastructure issues, kept
 
 ## A known trade-off: ephemeral infrastructure vs. the CI/CD pipeline
 
-To avoid unnecessary cost, the VM is destroyed (`terraform destroy`) between work sessions rather than left running. This means:
+To avoid unnecessary cost, the VM is destroyed (`terraform destroy`) between
+work sessions rather than left running. This means:
+
 - The VM's public IP changes every time it's re-provisioned
 - The `VM_HOST` GitHub secret needs updating after each fresh `terraform apply`
 - Kubernetes manifests need a one-time re-apply on a freshly provisioned VM before the CI/CD pipeline's `rollout restart` step has anything to restart
 
-This is a deliberate, understood trade-off between minimizing cost for a portfolio project and running an always-on production-style pipeline — not an oversight.
+This is a deliberate, understood trade-off between minimizing cost for a
+portfolio project and running an always-on production-style pipeline — not
+an oversight.
 
 ## Cost management
 
@@ -116,8 +167,12 @@ cd terraform
 terraform destroy
 ```
 
-**Note:** unlike the static-site project, this one uses a VM (`Standard_D2s_v3`, ~$0.10/hour), which bills for uptime regardless of activity — always destroy when not actively demoing or working on it.
+**Note:** unlike the static-site project, this one uses a VM
+(`Standard_D2s_v3`, ~$0.10/hour), which bills for uptime regardless of
+activity — always destroy when not actively demoing or working on it.
 
 ## Author
 
-Built by [shri-hari27](https://github.com/shri-hari27) as a DevOps portfolio project demonstrating Terraform, Kubernetes/k3s, Docker, RBAC security design, and CI/CD pipeline construction.
+Built by [shri-hari27](https://github.com/shri-hari27) as a DevOps
+portfolio project demonstrating Terraform, Kubernetes/k3s, Docker, RBAC
+security design, and CI/CD pipeline construction.
